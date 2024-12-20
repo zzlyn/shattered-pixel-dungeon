@@ -497,6 +497,7 @@ public class MagicMissile extends Emitter {
 		public WhiteParticle() {
 			super();
 			
+			color( 0x88CCFF );
 			lifespan = 0.4f;
 			
 			am = 0.5f;
