@@ -218,7 +218,7 @@ public class WandOfBlastWave extends DamageWand {
 	@Override
 	public void fx(Ballistica bolt, Callback callback) {
 		MagicMissile.boltFromChar( curUser.sprite.parent,
-				MagicMissile.FORCE,
+				MagicMissile.MAGIC_MISSILE,
 				curUser.sprite,
 				bolt.collisionPos,
 				callback);

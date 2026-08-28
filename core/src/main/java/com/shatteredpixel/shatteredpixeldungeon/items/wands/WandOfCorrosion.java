@@ -82,7 +82,7 @@ public class WandOfCorrosion extends Wand {
 	public void fx(Ballistica bolt, Callback callback) {
 		MagicMissile.boltFromChar(
 				curUser.sprite.parent,
-				MagicMissile.CORROSION,
+				MagicMissile.MAGIC_MISSILE,
 				curUser.sprite,
 				bolt.collisionPos,
 				callback);

@@ -230,7 +230,7 @@ public class WandOfFireblast extends DamageWand {
 				longestRay = ray;
 			}
 			((MagicMissile)curUser.sprite.parent.recycle( MagicMissile.class )).reset(
-					MagicMissile.FIRE_CONE,
+					MagicMissile.MAGIC_MISS_CONE,
 					curUser.sprite,
 					ray.path.get(ray.dist),
 					null
@@ -239,7 +239,7 @@ public class WandOfFireblast extends DamageWand {
 
 		//final zap at half distance of the longest ray, for timing of the actual wand effect
 		MagicMissile.boltFromChar( curUser.sprite.parent,
-				MagicMissile.FIRE_CONE,
+				MagicMissile.MAGIC_MISS_CONE,
 				curUser.sprite,
 				longestRay.path.get(longestRay.dist/2),
 				callback );

@@ -264,7 +264,7 @@ public class WandOfCorruption extends Wand {
 	@Override
 	public void fx(Ballistica bolt, Callback callback) {
 		MagicMissile.boltFromChar( curUser.sprite.parent,
-				MagicMissile.SHADOW,
+				MagicMissile.MAGIC_MISSILE,
 				curUser.sprite,
 				bolt.collisionPos,
 				callback);
