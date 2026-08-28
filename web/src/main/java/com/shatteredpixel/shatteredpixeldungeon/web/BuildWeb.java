@@ -76,6 +76,47 @@ public class BuildWeb {
 				.build(outputDir);
 
 		configureWebParityLogging(outputDir, webParityLogging);
+		copyWebappExtras(outputDir);
+		stampServiceWorker(outputDir);
+	}
+
+	//PWA files (manifest, service worker, icons) live next to the index.html
+	// template; the backend only consumes the template, so copy the rest.
+	private static void copyWebappExtras(File outputDir) {
+		File src = new File("src/main/resources/webapp");
+		File dst = new File(outputDir, "webapp");
+		File[] files = src.listFiles();
+		if (files == null) {
+			throw new IllegalStateException("Missing webapp resources at " + src);
+		}
+		try {
+			for (File f : files) {
+				if (f.isFile() && !f.getName().equals("index.html")) {
+					Files.copy(f.toPath(), new File(dst, f.getName()).toPath(),
+							java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+				}
+			}
+		} catch (IOException e) {
+			throw new RuntimeException("Unable to copy webapp extras", e);
+		}
+	}
+
+	private static final String BUILD_VERSION_PLACEHOLDER = "%BUILD_VERSION%";
+
+	//each build gets its own service worker cache name, so a deploy fully
+	// re-precaches and the app never mixes files from two versions
+	private static void stampServiceWorker(File outputDir) {
+		Path sw = new File(new File(outputDir, "webapp"), "sw.js").toPath();
+		try {
+			String js = Files.readString(sw, StandardCharsets.UTF_8);
+			if (!js.contains(BUILD_VERSION_PLACEHOLDER)) {
+				throw new IllegalStateException("Missing " + BUILD_VERSION_PLACEHOLDER + " in " + sw);
+			}
+			Files.writeString(sw, js.replace(BUILD_VERSION_PLACEHOLDER,
+					Long.toString(System.currentTimeMillis())), StandardCharsets.UTF_8);
+		} catch (IOException e) {
+			throw new RuntimeException("Unable to stamp service worker in " + sw, e);
+		}
 	}
 
 	private static void configureWebParityLogging(File outputDir, boolean enabled) {

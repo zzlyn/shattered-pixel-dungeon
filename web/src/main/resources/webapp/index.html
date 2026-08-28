@@ -3,6 +3,14 @@
     <head>
         <title>%TITLE%</title>
         <meta http-equiv="Content-Type" content="text/html;charset=utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+        <meta name="mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+        <meta name="apple-mobile-web-app-title" content="Shattered PD">
+        <link rel="manifest" href="manifest.webmanifest">
+        <link rel="apple-touch-icon" href="icon_256.png">
+        <link rel="icon" type="image/png" href="icon_32.png">
         <style>
             html {
                 width: 100%;
@@ -16,6 +24,10 @@
                 margin: 0;
                 padding: 0;
                 overflow: hidden;
+                overscroll-behavior: none;
+                user-select: none;
+                -webkit-user-select: none;
+                -webkit-touch-callout: none;
             }
 
             #game-shell {
@@ -57,7 +69,12 @@
 
             @media (max-width: 640px), (max-height: 640px) {
                 #game-shell {
-                    padding: 8px;
+                    /* keep the playfield clear of the iPhone notch and home indicator */
+                    padding:
+                        max(8px, env(safe-area-inset-top))
+                        max(8px, env(safe-area-inset-right))
+                        max(8px, env(safe-area-inset-bottom))
+                        max(8px, env(safe-area-inset-left));
                 }
 
                 #game-container {
@@ -946,6 +963,33 @@
                     focusGameCanvas();
                 }
             }, { capture: true });
+
+            // ---- installable offline app (PWA) support ----
+
+            // ask the browser to protect game saves from storage eviction;
+            // granted automatically for installed home screen web apps on iOS
+            if (navigator.storage && navigator.storage.persist) {
+                navigator.storage.persist().catch(() => {});
+            }
+
+            // register after load so the precache mostly hits the warm HTTP
+            // cache from the game's own initial asset download
+            if ("serviceWorker" in navigator) {
+                window.addEventListener("load", () => {
+                    navigator.serviceWorker.register("sw.js").catch((e) => {
+                        logWebParity("service worker register failed", { error: String(e) });
+                    });
+                });
+            }
+
+            // block iOS standalone-mode back/forward edge swipes; the game
+            // canvas still receives the touch, only the browser gesture dies
+            document.addEventListener("touchstart", (event) => {
+                const touch = event.touches && event.touches[0];
+                if (touch && (touch.pageX < 24 || touch.pageX > window.innerWidth - 24)) {
+                    event.preventDefault();
+                }
+            }, { passive: false });
         </script>
         %JS_SCRIPT%
     </body>
