@@ -69,6 +69,56 @@ for (const chunk of rawDiff.split(/^(?=diff --git )/m)) {
   files.push(file);
 }
 
+// ---- bolt visual previews --------------------------------------------------
+// detect swapped bolt/beam/color tokens in the diff and render an animated
+// before -> after preview at the top of the report
+const TOKEN_RE = /MagicMissile\.[A-Z_]{3,}|Beam\.(?:DeathRay|HealthRay|LightRay|SunRay)|color\(\s*0x[0-9A-Fa-f]{6}\s*\)/g;
+const BOLT_SPECS = {
+  'MagicMissile.MAGIC_MISSILE': { kind: 'particles', color: '#88CCFF' },
+  'MagicMissile.MAGIC_MISS_CONE': { kind: 'cone', color: '#88CCFF' },
+  'MagicMissile.FROST': { kind: 'particles', color: '#88CCFF' },
+  'MagicMissile.FROST_CONE': { kind: 'cone', color: '#88CCFF' },
+  'MagicMissile.FIRE': { kind: 'particles', color: '#EE7722' },
+  'MagicMissile.FIRE_CONE': { kind: 'cone', color: '#EE7722' },
+  'MagicMissile.EARTH': { kind: 'particles', color: '#B9962E' },
+  'MagicMissile.EARTH_CONE': { kind: 'cone', color: '#B9962E' },
+  'MagicMissile.CORROSION': { kind: 'particles', color: '#BB8833' },
+  'MagicMissile.CORROSION_CONE': { kind: 'cone', color: '#BB8833' },
+  'MagicMissile.SHADOW': { kind: 'particles', color: '#553377' },
+  'MagicMissile.SHADOW_CONE': { kind: 'cone', color: '#553377' },
+  'MagicMissile.FORCE': { kind: 'particles', color: '#664422' },
+  'MagicMissile.FORCE_CONE': { kind: 'cone', color: '#664422' },
+  'MagicMissile.WARD': { kind: 'particles', color: '#8822FF' },
+  'MagicMissile.WARD_CONE': { kind: 'cone', color: '#8822FF' },
+  'MagicMissile.FOLIAGE': { kind: 'particles', color: '#55AA44' },
+  'MagicMissile.RAINBOW': { kind: 'rainbow', color: '#FFFFFF' },
+  'Beam.DeathRay': { kind: 'beam', color: '#BB33FF' },
+  'Beam.HealthRay': { kind: 'beam', color: '#DD2222' },
+  'Beam.LightRay': { kind: 'beam', color: '#FFFFFF' },
+  'Beam.SunRay': { kind: 'beam', color: '#FFFF44' },
+};
+function boltSpec(token) {
+  if (BOLT_SPECS[token]) return { ...BOLT_SPECS[token], label: token };
+  const m = token.match(/color\(\s*0x([0-9A-Fa-f]{6})\s*\)/);
+  if (m) return { kind: 'particles', color: '#' + m[1], label: token };
+  return { kind: 'particles', color: '#999999', label: token };
+}
+const previews = [];
+for (const f of files) {
+  for (const h of f.hunks) {
+    const delToks = [], addToks = [];
+    for (const [cls, , , text] of h.rows) {
+      if (cls === 'del') delToks.push(...(text.match(TOKEN_RE) ?? []));
+      else if (cls === 'add') addToks.push(...(text.match(TOKEN_RE) ?? []));
+    }
+    for (let i = 0; i < Math.min(delToks.length, addToks.length); i++) {
+      if (delToks[i] !== addToks[i]) {
+        previews.push({ file: f.path, before: boltSpec(delToks[i]), after: boltSpec(addToks[i]) });
+      }
+    }
+  }
+}
+
 // ---- render ----------------------------------------------------------------
 const totalAdds = files.reduce((n, f) => n + f.adds, 0);
 const totalDels = files.reduce((n, f) => n + f.dels, 0);
@@ -115,6 +165,14 @@ const html = `<!doctype html>
   tr.del td.code { background: #ffebe9; } tr.del td.ln { background: #ffcecb; }
   tr.meta td.code { color: #59636e; }
   .binary { padding: 12px; color: #59636e; font-style: italic; }
+  section.bolts { border: 1px solid #d1d9e0; border-radius: 8px; padding: 12px 16px; margin: 16px 0; background: #0d1117; }
+  section.bolts h2 { color: #e6edf3; font-size: 15px; margin: 4px 0 10px; }
+  .bolt-card { display: flex; align-items: center; gap: 12px; padding: 6px 0; flex-wrap: wrap; }
+  .bp-file { font: 12px ui-monospace, Consolas, monospace; color: #9198a1; width: 220px; }
+  .lane { display: flex; flex-direction: column; gap: 2px; }
+  .lane canvas { background: #10151c; border-radius: 6px; }
+  .bl { font: 10px ui-monospace, Consolas, monospace; color: #59636e; }
+  .bolt-card .arrow { color: #9198a1; font-size: 18px; }
   .empty { padding: 40px; text-align: center; color: #59636e; font-size: 16px; }
   @media (prefers-color-scheme: dark) {
     body { background: #0d1117; color: #e6edf3; }
@@ -136,9 +194,56 @@ upstream/master:   ${esc(upstreamInfo)}
 generated:         ${new Date().toLocaleString()}</div>
 </header>
 <main>
+${previews.length === 0 ? '' : `<section class="bolts"><h2>Bolt visual preview (${previews.length} change${previews.length === 1 ? '' : 's'})</h2>
+${previews.map((p, i) => `<div class="bolt-card"><div class="bp-file">${esc(p.file.split('/').pop())}</div>
+<div class="lane"><canvas id="bolt-b${i}" width="200" height="36"></canvas><span class="bl">${esc(p.before.label)}</span></div>
+<div class="arrow">→</div>
+<div class="lane"><canvas id="bolt-a${i}" width="200" height="36"></canvas><span class="bl">${esc(p.after.label)}</span></div></div>`).join('\n')}
+</section>`}
 ${files.length === 0 ? '<div class="empty">No differences — fork matches the upstream base.</div>'
   : `<ul class="toc">${toc}</ul>\n${fileSections}`}
 </main>
+<script>
+const BOLTS = ${JSON.stringify(previews.map((p) => [p.before, p.after]))};
+const lanes = [];
+BOLTS.forEach(([b, a], i) => {
+  lanes.push([document.getElementById('bolt-b' + i), b], [document.getElementById('bolt-a' + i), a]);
+});
+const parts = new Map(lanes.map(([c]) => [c, []]));
+function tick(t) {
+  for (const [cv, spec] of lanes) {
+    const ctx = cv.getContext('2d'), W = cv.width, H = cv.height;
+    ctx.fillStyle = '#10151c'; ctx.fillRect(0, 0, W, H);
+    if (spec.kind === 'beam') {
+      const pulse = 0.55 + 0.45 * Math.sin(t / 180);
+      ctx.globalAlpha = pulse;
+      ctx.strokeStyle = spec.color; ctx.lineWidth = 5; ctx.shadowColor = spec.color; ctx.shadowBlur = 8;
+      ctx.beginPath(); ctx.moveTo(8, H / 2); ctx.lineTo(W - 8, H / 2); ctx.stroke();
+      ctx.globalAlpha = 1; ctx.shadowBlur = 0;
+      continue;
+    }
+    const ps = parts.get(cv);
+    const spread = spec.kind === 'cone' ? 9 : 3.5;
+    for (let n = 0; n < (spec.kind === 'cone' ? 3 : 2); n++) {
+      ps.push({ x: 6, y: H / 2 + (Math.random() - 0.5) * 4, vx: 1.6 + Math.random(),
+                vy: (Math.random() - 0.5) * spread * 0.28, life: 1,
+                hue: (t / 6 + Math.random() * 60) % 360 });
+    }
+    for (let j = ps.length - 1; j >= 0; j--) {
+      const p = ps[j];
+      p.x += p.vx; p.y += p.vy; p.life -= 0.022;
+      if (p.life <= 0 || p.x > W) { ps.splice(j, 1); continue; }
+      ctx.globalAlpha = Math.max(0, p.life) * 0.9;
+      ctx.fillStyle = spec.kind === 'rainbow' ? 'hsl(' + p.hue + ',90%,70%)' : spec.color;
+      const s = 1.5 + 3 * p.life;
+      ctx.fillRect(p.x - s / 2, p.y - s / 2, s, s);
+    }
+    ctx.globalAlpha = 1;
+  }
+  requestAnimationFrame(tick);
+}
+if (lanes.length) requestAnimationFrame(tick);
+</script>
 </body></html>`;
 
 const outPath = join(repoDir, 'fork-diff.html');
