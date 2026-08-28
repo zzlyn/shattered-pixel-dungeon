@@ -72,7 +72,10 @@ public class BuildWeb {
 				.setDebugInformationGenerated(!release)
 				.setSourceMapsFileGenerated(!release)
 				.setOptimizationLevel(TeaVMOptimizationLevel.SIMPLE)
-				.setObfuscated(false)
+				//release output must stay under Cloudflare Pages' 25 MiB file cap;
+				// TeaVM minification renames JS identifiers only, Java class-name
+				// metadata (used by save deserialization) is preserved
+				.setObfuscated(release)
 				.build(outputDir);
 
 		configureWebParityLogging(outputDir, webParityLogging);
