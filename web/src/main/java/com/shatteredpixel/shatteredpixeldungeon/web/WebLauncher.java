@@ -38,8 +38,11 @@ public class WebLauncher {
 		FileUtils.setDefaultFileProperties(Files.FileType.Local, "shattered-pixel-dungeon/");
 
 		WebApplicationConfiguration config = new WebApplicationConfiguration("canvas");
-		config.width = SPDSettings.DEFAULT_WINDOW_WIDTH;
-		config.height = SPDSettings.DEFAULT_WINDOW_HEIGHT;
+		//auto-size: canvas fills the window and follows resizes/rotation,
+		// matching how the native mobile app fills the whole screen
+		config.width = 0;
+		config.height = 0;
+		config.usePhysicalPixels = true;
 		config.showDownloadLogs = false;
 		config.useGL30 = true;
 		config.preloadListener = assetLoader -> assetLoader.loadScript("freetype.js");

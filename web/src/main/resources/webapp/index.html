@@ -30,31 +30,29 @@
                 -webkit-touch-callout: none;
             }
 
+            /* fill the whole screen like the native mobile app; the game
+               adapts its own layout to any window shape. safe-area insets
+               keep the HUD clear of the iPhone notch and home indicator
+               (they are 0 everywhere else). */
             #game-shell {
                 box-sizing: border-box;
-                display: grid;
-                min-height: 100dvh;
-                padding: 24px;
-                place-items: center;
+                height: 100dvh;
+                padding:
+                    env(safe-area-inset-top, 0px)
+                    env(safe-area-inset-right, 0px)
+                    env(safe-area-inset-bottom, 0px)
+                    env(safe-area-inset-left, 0px);
                 width: 100vw;
             }
 
             #game-container {
                 --game-width: 800;
                 --game-height: 600;
-                aspect-ratio: var(--game-width) / var(--game-height);
                 background: #000;
-                box-shadow:
-                    0 0 0 1px rgba(255, 255, 255, 0.14),
-                    0 18px 48px rgba(0, 0, 0, 0.58);
-                max-height: calc(100dvh - 48px);
-                max-width: calc(100vw - 48px);
+                height: 100%;
                 overflow: hidden;
                 position: relative;
-                width: min(
-                    calc(100vw - 48px),
-                    calc((100dvh - 48px) * var(--game-width) / var(--game-height))
-                );
+                width: 100%;
             }
 
             #canvas {
@@ -65,26 +63,6 @@
                 outline: none;
                 touch-action: none;
                 width: 100%;
-            }
-
-            @media (max-width: 640px), (max-height: 640px) {
-                #game-shell {
-                    /* keep the playfield clear of the iPhone notch and home indicator */
-                    padding:
-                        max(8px, env(safe-area-inset-top))
-                        max(8px, env(safe-area-inset-right))
-                        max(8px, env(safe-area-inset-bottom))
-                        max(8px, env(safe-area-inset-left));
-                }
-
-                #game-container {
-                    max-height: calc(100dvh - 16px);
-                    max-width: calc(100vw - 16px);
-                    width: min(
-                        calc(100vw - 16px),
-                        calc((100dvh - 16px) * var(--game-width) / var(--game-height))
-                    );
-                }
             }
         </style>
     </head>

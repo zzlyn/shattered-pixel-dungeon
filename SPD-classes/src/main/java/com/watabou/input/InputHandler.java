@@ -79,6 +79,11 @@ public class InputHandler extends InputAdapter {
 	
 	@Override
 	public synchronized boolean touchDown(int screenX, int screenY, int pointer, int button) {
+		if (DeviceCompat.webParityLoggingEnabled()) {
+			LOG.info("[WEB-PARITY] InputHandler.touchDown x=" + screenX + " y=" + screenY
+					+ " pointer=" + pointer + " button=" + button
+					+ " gameW=" + Game.width + " gameH=" + Game.height);
+		}
 		if (screenX < 0 || screenX > Game.width || screenY < 0 || screenY > Game.height){
 			return true;
 		}
@@ -98,6 +103,10 @@ public class InputHandler extends InputAdapter {
 	
 	@Override
 	public synchronized boolean touchUp(int screenX, int screenY, int pointer, int button) {
+		if (DeviceCompat.webParityLoggingEnabled()) {
+			LOG.info("[WEB-PARITY] InputHandler.touchUp x=" + screenX + " y=" + screenY
+					+ " pointer=" + pointer + " button=" + button);
+		}
 
 		if (button >= 3 && KeyBindings.isKeyBound( button + 1000 )) {
 			KeyEvent.addKeyEvent( new KeyEvent( button + 1000, false ) );

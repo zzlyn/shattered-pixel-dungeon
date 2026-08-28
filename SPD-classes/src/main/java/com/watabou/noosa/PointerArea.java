@@ -57,6 +57,16 @@ public class PointerArea extends Visual implements Signal.Listener<PointerEvent>
 	public boolean onSignal( PointerEvent event ) {
 
 		boolean hit = event != null && target.overlapsScreenPoint( (int)event.current.x, (int)event.current.y );
+
+		if (event != null && event.type == PointerEvent.Type.DOWN
+				&& com.watabou.utils.DeviceCompat.webParityLoggingEnabled()) {
+			Camera c = target.camera();
+			java.util.logging.Logger.getLogger(PointerArea.class.getName()).info(
+					"[WEB-PARITY] PA hit=" + hit + " target=" + target.getClass().getSimpleName()
+					+ " t=" + target.x + "," + target.y + " " + target.width + "x" + target.height
+					+ " cam=" + (c == null ? "null" : (c.x + "," + c.y + " z=" + c.zoom
+					+ " scroll=" + c.scroll.x + "," + c.scroll.y)));
+		}
 		
 		if (!isActive()) {
 			return (hit && blockLevel == ALWAYS_BLOCK);
